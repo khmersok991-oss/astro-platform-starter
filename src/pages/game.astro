@@ -1,0 +1,90 @@
+---
+import Layout from '../../layouts/Layout.astro';
+const title = 'Game Hub';
+---
+
+<Layout title={title}>
+    <div class="py-8">
+        <h1 class="text-3xl font-bold mb-4">Game Hub — Play & Proxy Embeds</h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <section class="p-4 bg-surface rounded-lg">
+                <h2 class="text-xl font-semibold mb-2">Simple Click Game</h2>
+                <canvas id="gameCanvas" width="600" height="400" class="w-full bg-black rounded"></canvas>
+                <div class="mt-3">
+                    <button id="resetBtn" class="px-3 py-1 bg-primary rounded">Reset</button>
+                    <span id="score" class="ml-4">Score: 0</span>
+                </div>
+            </section>
+
+            <section class="p-4 bg-surface rounded-lg">
+                <h2 class="text-xl font-semibold mb-2">Proxied Embeds</h2>
+                <p class="text-sm mb-3">Click a provider to load an embed through the built-in proxy.</p>
+
+                <div class="flex gap-2 mb-3">
+                    <button class="px-2 py-1 bg-[#ff2d55] rounded text-sm" data-url="https://www.tiktok.com/embed/v2/7021234567890123456">TikTok (example)</button>
+                    <button class="px-2 py-1 bg-[#fffc00] rounded text-sm" data-url="https://www.snapchat.com/embed/123456789">Snapchat (example)</button>
+                    <button class="px-2 py-1 bg-[#ff0000] rounded text-sm" data-url="https://www.youtube.com/embed/dQw4w9WgXcQ">YouTube</button>
+                </div>
+
+                <div class="border rounded overflow-hidden" style="aspect-ratio:16/9;">
+                    <iframe id="embedFrame" src="about:blank" class="w-full h-full" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+                </div>
+                <p class="text-xs mt-2">Note: third-party sites may block embedding or require additional headers. Use this proxy for quick demos only.</p>
+            </section>
+        </div>
+    </div>
+
+    <script type="module">
+        // Simple click game
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let score = 0;
+
+        function draw() {
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            ctx.fillStyle = '#0ea5a4';
+            ctx.beginPath();
+            const r = 30 + Math.sin(Date.now()/400)*10;
+            ctx.arc(canvas.width/2, canvas.height/2, r, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = '#000';
+            ctx.font = '20px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Click the circle!', canvas.width/2, 30);
+            requestAnimationFrame(draw);
+        }
+
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const dx = x - canvas.width/2;
+            const dy = y - canvas.height/2;
+            const dist = Math.sqrt(dx*dx+dy*dy);
+            if (dist < 50) {
+                score += 1;
+                document.getElementById('score').textContent = 'Score: ' + score;
+            }
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            score = 0;
+            document.getElementById('score').textContent = 'Score: 0';
+        });
+
+        draw();
+
+        // Proxy embed loader
+        const buttons = document.querySelectorAll('button[data-url]');
+        const iframe = document.getElementById('embedFrame');
+
+        buttons.forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const url = btn.getAttribute('data-url');
+                // Use site proxy endpoint. The proxy expects a fully qualified URL.
+                iframe.src = `/api/proxy?url=${encodeURIComponent(url)}`;
+            });
+        });
+    </script>
+</Layout>
